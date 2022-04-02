@@ -1,0 +1,35 @@
+{
+  "name": "@niallthomson/wtf",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "reinstall": "npm run clean && npm install",
+    "test": "CONTENT_PATH=$PWD/../testcontent node test.js"
+  },
+  "repository": "https://github.com/niallthomson/workshop-test-framework.git",
+  "license": "Apache-2.0",
+  "bin": {
+    "wtf": "./index.js"
+  },
+  "dependencies": {
+    "chai": "^4.3.6",
+    "envalid": "^7.2.2",
+    "glob-to-regexp": "^0.4.1",
+    "mochawesome": "^7.0.1",
+    "ora": "^6.0.1",
+    "remark": "^14.0.2",
+    "remark-code-blocks": "^2.0.1",
+    "remark-frontmatter": "^4.0.1",
+    "remark-gfm": "^3.0.1",
+    "remark-html": "^15.0.1",
+    "remark-hugo-shortcodes": "^0.2.13",
+    "remark-parse": "^10.0.1",
+    "remark-rehype": "^10.1.0",
+    "remark-stringify": "^10.0.2",
+    "unified": "^10.1.1",
+    "yaml": "^1.10.2"
+  }
+}
