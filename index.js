@@ -7,27 +7,33 @@ import util from 'util'
 import path from 'path'
 import child_process from 'child_process'
 import ora from 'ora';
-import { cleanEnv, str, bool, num } from 'envalid'
 import GlobToRegExp from 'glob-to-regexp'
 
 import gatherer from './lib/gatherer.js'
+import { PersistentShell } from './lib/shell.js'
+import { Command } from 'commander'
 
-const exec = util.promisify(child_process.exec);
+const program = new Command();
+program
+  .description('Automated test framework for Markdown that contains bash scripts')
+  .arguments('<path>', 'file path to Markdown content', '.')
+  .option('-g, --glob <pattern>', 'Glob for tests to include ex. content/chapter1/*', '')
+  .option('-d, --debug', 'Enable debug output')
+  .option('--dry-run', 'Run test but do not execute scripts')
+  .option('-t, --timeout <timeout>', 'Timeout for the test run', 200000)
+  .option('-w, --work-dir <path>', 'Path to ');
 
-const env = cleanEnv(process.env, {
-  CONTENT_PATH:    str(),
-  PATH_FILTER:     str({default: ''}),
-  GLOBAL_TIMEOUT:  num({default: 200000}),
-  SKIP_COMMANDS:   bool({default: false}),
-  DEBUG_MODE:      bool({default: false}),
-})
+program.parse();
+
+const options = program.opts();
 
 const Test = Mocha.Test;
 
 const suiteInstance = Mocha.Suite;
+const shell = new PersistentShell(options.workDir);
 
 const mocha = new Mocha({
-  timeout: env.GLOBAL_TIMEOUT
+  timeout: options.timeout
 });
 
 const newSuite = (suiteName = 'Suite Name') => suiteInstance.create(mocha.suite, suiteName);
@@ -43,32 +49,48 @@ const runMochaTests = () => {
 
 async function main() {
   let spinner = ora('Generating test cases').start();
-  let tests = await gatherer(env.CONTENT_PATH)
+  let tests = await gatherer(program.processedArgs[0])
   spinner.succeed()
 
   spinner = ora("Building Mocha suites").start();
-  await buildTestSuites(tests.children[0], newSuite("Root"))
+  await buildTestSuites(tests, )
   spinner.succeed()
 
   try {
+    shell.start();
     console.log("\nExecuting tests...")
     const result = await runMochaTests()
     console.log(result);
   }
-  catch (e) { 
+  catch (e) {
+    shell.end();
+
     console.log(e) 
     process.exit(1)
   }
+  
+  shell.end();
 }
 
 async function buildTestSuites(record, parentSuite) {
-  let suite = suiteInstance.create(parentSuite, record.title);
+  var suite
+  
+  if(!parentSuite) {
+    suite = newSuite(record.title)
+  }
+  else {
+    suite = suiteInstance.create(parentSuite, record.title);
+  }
+
+  if(!record.run) {
+    return suite;
+  }
 
   var addTests = true;
 
-  if(record.path !== undefined && env.PATH_FILTER !== '') {
-    var relativePath = path.relative(path.resolve(env.CONTENT_PATH), record.path)
-    var re = GlobToRegExp(env.PATH_FILTER, { extended: true });
+  if(record.path !== undefined && options.glob !== '') {
+    var relativePath = path.relative(path.resolve(program.processedArgs[0]), record.path)
+    var re = GlobToRegExp(options.glob, { extended: true });
 
     if(!re.exec(relativePath)) {
       addTests = false;
@@ -81,7 +103,7 @@ async function buildTestSuites(record, parentSuite) {
     })
 
     for(const test in sortedTests) {
-      await buildTest(sortedTests[test], suite)
+      await buildTests(sortedTests[test], suite)
     }
   }
 
@@ -96,7 +118,7 @@ async function buildTestSuites(record, parentSuite) {
   return suite;
 }
 
-async function buildTest(test, suite) {
+async function buildTests(test, suite) {
   suite.addTest(new Test(test.title, async function () {
     if(test.cases.length == 0) {
       this.skip();
@@ -112,31 +134,27 @@ async function buildTest(test, suite) {
       
       if(this.failed === false) {
         try {
-          if(env.DEBUG_MODE) {
-            console.log(`Running command: ${testCase.command}`)
+          if(options.debug) {
+            console.log(`Running script: \n${testCase.command}`)
           }
 
-          if (!env.SKIP_COMMANDS) {
+          if (!options.dryRun) {
             hook(testCase, 'before')
 
-            const { stdout, stderr } = await exec('set -Eeuo pipefail\n'+testCase.command, {
-              timeout: testCase.timeout * 1000,
-              shell: '/bin/bash'
-            });
+            await shell.execWithTimeout(testCase.command, testCase.timeout * 1000)
 
             hook(testCase, 'after')
-          }
 
-          if(testCase.wait > 0) {
-            await sleep(testCase.wait * 1000)
+            if(testCase.wait > 0) {
+              await sleep(testCase.wait * 1000)
+            }
           }
         } catch (e) {
           console.log(`Error running command ${testCase.command}: ${e}`)
           this.failed = true
           if(e.code !== undefined && e.code) {
             console.log(`Command returned error code ${e.code}`)
-            console.log(`stdout: ${e.stdout}`)
-            console.log(`stderr: ${e.stderr}`)
+            console.log(`Output: ${e.output}`)
             expect(e.code).to.equal(0);
           }
           else {
@@ -154,10 +172,7 @@ async function buildTest(test, suite) {
 
 async function hook(testCase, hook) {
   if(testCase.hook) {
-    await exec(`bash ${testCase.dir}/tests/hook-${testCase.hook}.sh ${hook}`, {
-      timeout: 120000,
-      shell: '/bin/bash'
-    });
+    await shell.execWithTimeout(`bash ${testCase.dir}/tests/hook-${testCase.hook}.sh ${hook}`, 120000);
   }
 }
 

@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "chai": "^4.3.6",
-    "envalid": "^7.2.2",
+    "commander": "^9.1.0",
     "glob-to-regexp": "^0.4.1",
     "mochawesome": "^7.0.1",
     "ora": "^6.0.1",
@@ -29,6 +29,7 @@
     "remark-parse": "^10.0.1",
     "remark-rehype": "^10.1.0",
     "remark-stringify": "^10.0.2",
+    "tree-kill": "^1.2.2",
     "unified": "^10.1.1",
     "yaml": "^1.10.2"
   }
