@@ -20,7 +20,7 @@ program
   .option('-g, --glob <pattern>', 'Glob for tests to include ex. content/chapter1/*', '')
   .option('-d, --debug', 'Enable debug output')
   .option('--dry-run', 'Run test but do not execute scripts')
-  .option('-t, --timeout <timeout>', 'Timeout for the test run', 200000)
+  .option('-t, --timeout <timeout>', 'Timeout for the test run', 800000)
   .option('-w, --work-dir <path>', 'Path to ');
 
 program.parse();
@@ -30,7 +30,7 @@ const options = program.opts();
 const Test = Mocha.Test;
 
 const suiteInstance = Mocha.Suite;
-const shell = new PersistentShell(options.workDir);
+const shell = new PersistentShell(options.workDir, options.debug);
 
 const mocha = new Mocha({
   timeout: options.timeout
@@ -134,27 +134,29 @@ async function buildTests(test, suite) {
       
       if(this.failed === false) {
         try {
-          if(options.debug) {
-            console.log(`Running script: \n${testCase.command}`)
-          }
+          await hook(testCase, 'before')
 
           if (!options.dryRun) {
-            hook(testCase, 'before')
+            let response = await shell.execWithTimeout(testCase.command, testCase.timeout * 1000, testCase.expectError)
 
-            await shell.execWithTimeout(testCase.command, testCase.timeout * 1000)
-
-            hook(testCase, 'after')
-
-            if(testCase.wait > 0) {
-              await sleep(testCase.wait * 1000)
+            if(options.debug) {
+              console.log(response)
             }
           }
+
+          await hook(testCase, 'after')
+
+          if(!options.dryRun && testCase.wait > 0) {
+            await sleep(testCase.wait * 1000)
+          }
+
         } catch (e) {
-          console.log(`Error running command ${testCase.command}: ${e}`)
+          console.log(`Error running command ${testCase.command}`)
           this.failed = true
           if(e.code !== undefined && e.code) {
             console.log(`Command returned error code ${e.code}`)
             console.log(`Output: ${e.output}`)
+            shell.reset();
             expect(e.code).to.equal(0);
           }
           else {
@@ -172,8 +174,19 @@ async function buildTests(test, suite) {
 
 async function hook(testCase, hook) {
   if(testCase.hook) {
-    await shell.execWithTimeout(`bash ${testCase.dir}/tests/hook-${testCase.hook}.sh ${hook}`, 120000);
+    if(options.debug) {
+      console.log(`Calling ${hook} hook ${testCase.hook}`)
+    }
+    if(!options.dryRun) {
+      return await shell.execWithTimeout(`bash ${testCase.dir}/tests/hook-${testCase.hook}.sh ${hook}`, 180000);
+    }
+
+    if(options.debug) {
+      console.log(`Completed ${hook} hook ${testCase.hook}`)
+    }
   }
+
+  return Promise.resolve();
 }
 
 async function sleep(ms) {
