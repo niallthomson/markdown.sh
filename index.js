@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import Mocha from 'mocha'
-import { expect } from 'chai'
+import { expect, assert } from 'chai'
 
 import util from 'util'
 import path from 'path'
@@ -21,7 +21,8 @@ program
   .option('-d, --debug', 'Enable debug output')
   .option('--dry-run', 'Run test but do not execute scripts')
   .option('-t, --timeout <timeout>', 'Timeout for the test run', 800000)
-  .option('-w, --work-dir <path>', 'Path to ');
+  .option('-j, --junit-report <path>', 'Enables JUnit output format with report at the specified path', '')
+  .option('-w, --work-dir <path>', 'Path to working directory where commands will be executed', '');
 
 program.parse();
 
@@ -32,9 +33,20 @@ const Test = Mocha.Test;
 const suiteInstance = Mocha.Suite;
 const shell = new PersistentShell(options.workDir, options.debug);
 
-const mocha = new Mocha({
-  timeout: options.timeout
-});
+const mochaOptions = {
+  timeout: options.timeout,
+};
+
+if(options.junitReport !== '') {
+  mochaOptions.reporter = 'mocha-junit-reporter'
+  mochaOptions.reporterOptions = {
+    mochaFile: options.junitReport,
+    includePending: true,
+    testCaseSwitchClassnameAndName: true
+  }
+}
+
+const mocha = new Mocha(mochaOptions);
 
 const newSuite = (suiteName = 'Suite Name') => suiteInstance.create(mocha.suite, suiteName);
 
@@ -156,12 +168,13 @@ async function buildTests(test, suite) {
           if(e.code !== undefined && e.code) {
             console.log(`Command returned error code ${e.code}`)
             console.log(`Output: ${e.output}`)
-            shell.reset();
-            expect(e.code).to.equal(0);
+
+            assert.fail("Script should exit without errors");
           }
           else {
             console.log('Command probably timed out')
-            expect(testCase.timeout + 1).to.lessThanOrEqual(testCase.timeout)
+            shell.reset();
+            assert.fail(`Script should complete within ${testCase.timeout} seconds`)
           }
         }
       }
