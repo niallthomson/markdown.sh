@@ -41,10 +41,9 @@ jobs:
       env:
         version: ${{ env.NEW_VERSION }}
       with:
-        name: niallthomson/workshop-test-framework
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        registry: ghcr.io
+        name: niallthomson/wtf
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: version
         tags: "latest,${{ env.NEW_VERSION }}"
     
