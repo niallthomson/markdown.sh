@@ -1,0 +1,17 @@
+FROM amazonlinux:2022
+
+SHELL ["/bin/bash", "-c"]
+
+RUN yum install -y curl tar gzip nodejs npm
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN chmod +x /usr/src/app/index.js
+
+ENTRYPOINT ["/usr/src/app/index.js", "/content"]
