@@ -19,10 +19,14 @@ jobs:
       with:
         node-version: ${{ env.node_version }}
         registry-url: 'https://registry.npmjs.org'
-    - run: |
-           npm ci
-           git status
-           npm version patch
-           git push --follow-tags
-           npm publish
+    - run: npm ci
+    - name: Version and publish to npm
+      uses: bcomnes/npm-bump@v2.0.2
+      with:
+        git_email: thomson.niall@gmail.com
+        git_username: ${{ github.actor }}
+        newversion: ${{ github.event.inputs.newversion }}
+        push_version_commit: true
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        npm_token: ${{ secrets.NPM_TOKEN }}
     - run: NEW_VERSION=$(cat package.json | jq -r '.version') && echo $NEW_VERSION
