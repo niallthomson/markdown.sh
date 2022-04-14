@@ -4,7 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       newversion:
-        description: 'Semantic Version Bump Type (major minor patch)'
+        description: 'Bump Type'
+        type: choice
+        options:
+        - major
+        - minor
+        - patch
         required: true
 
 jobs:
@@ -34,12 +39,12 @@ jobs:
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@v4
       env:
-        version: ${NEW_VERSION}
+        version: ${{ env.NEW_VERSION }}
       with:
         name: niallthomson/workshop-test-framework
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: ghcr.io
         buildargs: version
-        tags: "latest,${env.NEW_VERSION}"
+        tags: "latest,${{ env.NEW_VERSION }}"
     
