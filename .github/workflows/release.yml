@@ -20,7 +20,7 @@ jobs:
         node-version: ${{ env.node_version }}
         registry-url: 'https://registry.npmjs.org'
     - run: |
-           npm i
+           npm ci
            git status
            npm version patch
            git push --follow-tags
