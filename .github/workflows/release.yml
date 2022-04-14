@@ -20,7 +20,6 @@ jobs:
         node-version: ${{ env.node_version }}
         registry-url: 'https://registry.npmjs.org'
     - run: npm i
-    - run: npm test
     - name: Version and publish to npm
       uses: bcomnes/npm-bump@v2.0.2
       with:
