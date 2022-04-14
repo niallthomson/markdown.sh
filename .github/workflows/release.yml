@@ -21,6 +21,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: |
            npm i
+           git status
            npm version patch
            git push --follow-tags
            npm publish
