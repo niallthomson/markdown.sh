@@ -21,7 +21,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
     - name: Version and publish to npm
-      uses: bcomnes/npm-bump@v2.0
+      uses: bcomnes/npm-bump@v2.0.2
       with:
         git_email: thomson.niall@gmail.com
         git_username: ${{ github.actor }}
