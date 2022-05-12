@@ -18,7 +18,13 @@ jobs:
       with:
         node-version: ${{ env.node_version }}
         registry-url: 'https://registry.npmjs.org'
-    - run: npm ci
-    - run: |
+    - name: Install NPM packages
+      run: npm ci
+    - name: Run test content
+      run: |
         node index.js test-content
-    
+    - name: Test container image build
+      run: |
+        docker build --build-arg "version=latest" -t test-image .
+
+        docker run -v $PWD/test-content:/content test-image /content
