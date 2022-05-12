@@ -1,3 +1,5 @@
-sample-content
+test-content
 docs
 *.sh
+.github
+Dockerfile*
