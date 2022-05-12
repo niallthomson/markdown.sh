@@ -6,6 +6,6 @@ SHELL ["/bin/bash", "-c"]
 
 RUN yum install -y curl tar gzip nodejs npm
 
-RUN npm install -g @niallthomson/wtf@$version
+RUN npm install -g @niallthomson/markdown-sh@$version
 
-ENTRYPOINT ["wtf"]
+ENTRYPOINT ["markdown-sh"]

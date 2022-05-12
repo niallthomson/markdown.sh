@@ -41,7 +41,7 @@ jobs:
       env:
         version: ${{ env.NEW_VERSION }}
       with:
-        name: niallthomson/wtf
+        name: niallthomson/markdown-sh
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: version
