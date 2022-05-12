@@ -58,7 +58,7 @@ markdown-sh --help
 Or using the Docker image:
 
 ```
-docker run -it niallthomson/markdown-sh:latest --help
+docker run -it ghcr.io/niallthomson/markdown-sh:latest --help
 ```
 
 ## Usage
